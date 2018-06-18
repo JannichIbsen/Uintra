@@ -132,7 +132,7 @@ function initEventListeners() {
     description.addEventListener("click", descriptionClickHandler);
     sentButton.addEventListener("click", sentButtonClickHandler);
     window.addEventListener("beforeunload", beforeUnloadHander);
-    expandBulletinBtn.addEventListener("click", descriptionClickHandler);
+    //expandBulletinBtn.addEventListener("click", descriptionClickHandler);
     closeBulletinBtn.addEventListener("click", function (ev) {
         closeBulletin(ev);
     });

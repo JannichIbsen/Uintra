@@ -18,22 +18,30 @@ namespace Uintra.Core.Jobs
             ProcessActivities();
         }
 
-        private void ProcessActivities()
+        protected bool ProcessActivities()
         {
+            var workPerformed = false;
+
             foreach (var service in _activityServices)
             {
                 var intranetActivities = service.GetAll();
 
                 foreach (var activity in intranetActivities)
                 {
-                    if (activity.IsPinActual && !service.IsPinActual(activity))
+                    if (IsOutdatedActivity(activity, service))
                     {
-                        var cacheableIntranetActivityService = (ICacheableIntranetActivityService<IIntranetActivity>)service;
+                        var cacheableIntranetActivityService = (ICacheableIntranetActivityService<IIntranetActivity>) service;
                         cacheableIntranetActivityService.UpdateActivityCache(activity.Id);
+                        workPerformed = true;
                     }
                 }
             }
 
-        }                   
+            return workPerformed;
+
+        }
+
+        protected virtual  bool IsOutdatedActivity(IIntranetActivity activity, IIntranetActivityService<IIntranetActivity> activityService) => 
+            activity.IsPinActual && !activityService.IsPinActual(activity);
     }
 }

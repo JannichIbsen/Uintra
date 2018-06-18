@@ -125,6 +125,7 @@
     &__label{
         position:relative;
         margin:0;
+        vertical-align:top;
     }
 
     &__box{
@@ -182,5 +183,34 @@
 
     &__area{
         padding:10px 39px;
+    }
+}
+
+.txt{
+    display:block;
+    width:100%;
+    margin:0;
+    padding:10px 10px 9px;
+    font:13px/22px var(--font-general);
+    color: var(--text-color-dark);
+    background: #fff;
+    border: 1px solid #c7c7c7;
+    position: relative;
+    -webkit-appearance: none;
+
+    &::placeholder{
+        color:#aaa;
+        opacity:1;
+    }
+
+    &[:disabled]{
+        background:#eee;
+        cursor:default;
+        pointer-events:none;
+    }
+
+    &--small{
+        width:200px;
+        padding:5px 10px 4px;
     }
 }

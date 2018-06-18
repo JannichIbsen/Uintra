@@ -24,6 +24,7 @@ using Compent.Uintra.Core.Groups;
 using Compent.Uintra.Core.Handlers;
 using Compent.Uintra.Core.Helpers;
 using Compent.Uintra.Core.IoC;
+using Compent.Uintra.Core.Licence;
 using Compent.Uintra.Core.LinkPreview.Config;
 using Compent.Uintra.Core.Navigation;
 using Compent.Uintra.Core.News;
@@ -39,6 +40,8 @@ using Compent.Uintra.Core.Users;
 using Compent.Uintra.Core.UserTags;
 using Compent.Uintra.Core.UserTags.Indexers;
 using Compent.Uintra.Core.Verification;
+using Compent.Uintra.Hubs;
+using Compent.Uintra.Jobs;
 using Compent.Uintra.Persistence.Sql;
 using EmailWorker.Ninject;
 using FluentScheduler;
@@ -56,6 +59,8 @@ using Ninject;
 using Ninject.Extensions.Conventions;
 using Ninject.Web.Common;
 using Ninject.Web.Common.WebHost;
+using uIntra.LicenceService.ApiClient;
+using uIntra.LicenceService.ApiClient.Interfaces;
 using Uintra.Bulletins;
 using Uintra.CentralFeed;
 using Uintra.CentralFeed.Providers;
@@ -221,6 +226,13 @@ namespace Compent.Uintra
             kernel.Bind<IJobSettingsConfiguration>().ToMethod(s => JobSettingsConfiguration.Configure).InSingletonScope();
             kernel.Bind<IPermissionsService>().To<PermissionsService>().InRequestScope();
 
+            //licence
+            kernel.Bind<ILicenceValidationServiceClient>().To<LicenceValidationServiceClient>().InRequestScope();
+            kernel.Bind<IValidateLicenceService>().To<ValidateLicenceService>().InRequestScope();
+            kernel.Bind<IWebApiClient>().ToMethod((ctx => new WebApiClient() { Connection = new LicenceServiceConnection() })).InSingletonScope();
+            kernel.Bind<ILicenceRequestHandler>().To<LicenceRequestHandler>().InRequestScope();
+
+
             // Umbraco
             kernel.Bind<UmbracoContext>().ToMethod(context => CreateUmbracoContext()).InRequestScope();
             kernel.Bind<UmbracoHelper>().ToSelf().InRequestScope();
@@ -266,7 +278,7 @@ namespace Compent.Uintra
             kernel.Bind<IFeedItemService>().To<EventsService>().InRequestScope();
             kernel.Bind<IFeedItemService>().To<BulletinsService>().InRequestScope();
             kernel.Bind<IFeedItemService>().To<PagePromotionService>().InRequestScope();
-            kernel.Bind<IFeedFilterService>().To<FeedFilterService>().InRequestScope();
+
 
             kernel.Bind<ICentralFeedService>().To<CentralFeedService>().InRequestScope();
             kernel.Bind<IGroupFeedService>().To<GroupFeedService>().InRequestScope();
@@ -279,6 +291,9 @@ namespace Compent.Uintra
             kernel.Bind<IFeedActivityHelper>().To<FeedActivityHelper>();
             kernel.Bind<IGroupActivityService>().To<GroupActivityService>();
             kernel.Bind<IActivityTypeHelper>().To<ActivityTypeHelper>();
+            kernel.Bind<IFeedListBuilder>().To<FeedListBuilder>();
+            kernel.Bind<IComparer<IFeedItem>>().To<CentralFeedItemComparer>();
+
 
             kernel.Bind<IActivityPageHelperFactory>().To<CacheActivityPageHelperFactory>()
                 .WhenInjectedInto<CentralFeedLinkProvider>()
@@ -299,7 +314,7 @@ namespace Compent.Uintra
 
             kernel.Bind<ICentralFeedHelper>().To<CentralFeedHelper>().InRequestScope();
             kernel.Bind<IGroupHelper>().To<GroupHelper>().InRequestScope();
-            kernel.Bind<IFeedFilterStateService<FeedFiltersState>>().To<CentralFeedFilterStateService>().InRequestScope();
+            kernel.Bind<IStateService<FeedFiltersState>>().To<FeedStateService>().InRequestScope();
 
             kernel.Bind(typeof(IIntranetActivityService<>)).To<NewsService>().InRequestScope();
             kernel.Bind(typeof(IIntranetActivityService<>)).To<EventsService>().InRequestScope();
@@ -452,12 +467,17 @@ namespace Compent.Uintra
             kernel.Bind<global::Uintra.Notification.Jobs.ReminderJob>().ToSelf().InRequestScope();
             kernel.Bind<MontlyMailJob>().ToSelf().InRequestScope();
             kernel.Bind<SendEmailJob>().ToSelf().InRequestScope();
-            kernel.Bind<UpdateActivityCacheJob>().ToSelf().InRequestScope();
+            kernel.Bind<ExtendedUpdateActivityCacheJob>().ToSelf().InRequestScope();
+            kernel.Bind<ActivityPublicationJob>().ToSelf().InRequestScope();
             kernel.Bind<IJobFactory>().To<IntranetJobFactory>().InRequestScope();
 
             //table
             kernel.Bind<ITablePanelPresentationBuilder>().To<TablePanelPresentationBuilder>().InRequestScope();
             kernel.Bind<ITableCellBuilder>().To<TableCellBuilder>().InRequestScope();
+
+
+            kernel.Bind<IFeedHubService>().To<FeedHubService>().InRequestScope();
+            
         }
 
         private static void RegisterEntityFrameworkServices(IKernel kernel)

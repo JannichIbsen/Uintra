@@ -10,6 +10,5 @@ namespace Uintra.Groups
         IEnumerable<IFeedItem> GetFeed(Guid groupId);
 
         IEnumerable<IFeedItem> GetFeed(Enum type, IEnumerable<Guid> groupId);
-        IEnumerable<IFeedItem> GetFeed(IEnumerable<Guid> groupId);
     }
 }

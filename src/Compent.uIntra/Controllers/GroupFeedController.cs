@@ -29,27 +29,27 @@ namespace Compent.Uintra.Controllers
             IGroupFeedContentService groupFeedContentContentService,
             IGroupFeedLinkProvider groupFeedLinkProvider,
             IGroupMemberService groupMemberService,
-            IFeedFilterStateService<FeedFiltersState> feedFilterStateService,
+            IStateService<FeedFiltersState> feedFilterStateService,
             IActivityTypeProvider activityTypeProvider,
             IPermissionsService permissionsService,
             IContextTypeProvider contextTypeProvider,
             IFeedLinkService feedLinkService,
-            IFeedFilterService feedFilterService)
+            IFeedListBuilder feedListAssembler)
             : base(
-                  subscribeService,
-                  groupFeedService,
-                  activitiesServiceFactory,
-                  intranetUserContentProvider,
-                  centralFeedTypeProvider,
-                  intranetUserService,
-                  groupFeedContentContentService,
-                  groupFeedLinkProvider,
-                  groupMemberService,
-                  feedFilterStateService,
-                  permissionsService,
-                  contextTypeProvider,
-                  feedLinkService,
-                  feedFilterService)
+                subscribeService,
+                groupFeedService,
+                activitiesServiceFactory,
+                intranetUserContentProvider,
+                centralFeedTypeProvider,
+                intranetUserService,
+                groupFeedContentContentService,
+                groupFeedLinkProvider,
+                groupMemberService,
+                feedFilterStateService,
+                permissionsService,
+                contextTypeProvider,
+                feedLinkService,
+                feedListAssembler)
         {
             _intranetUserService = intranetUserService;
         }

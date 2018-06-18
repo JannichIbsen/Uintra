@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Web.Mvc;
+using Compent.Extensions;
 using Uintra.CentralFeed;
 using Uintra.CentralFeed.Web;
 using Uintra.Core;
@@ -14,6 +15,7 @@ using Uintra.Core.User;
 using Uintra.Core.User.Permissions;
 using Uintra.Groups.Attributes;
 using Uintra.Subscribe;
+using static Uintra.Core.Context.ContextExtensions;
 
 namespace Uintra.Groups.Web
 {
@@ -25,11 +27,10 @@ namespace Uintra.Groups.Web
         private readonly IIntranetUserService<IGroupMember> _intranetUserService;
         private readonly IGroupFeedContentService _groupFeedContentContentService;
         private readonly IGroupMemberService _groupMemberService;
-        private readonly IFeedFilterStateService<FeedFiltersState> _feedFilterStateService;
+        private readonly IStateService<FeedFiltersState> _feedFilterStateService;
         private readonly IPermissionsService _permissionsService;
         private readonly IFeedLinkService _feedLinkService;
-        private readonly IFeedFilterService _feedFilterService;
-
+        private readonly IFeedListBuilder _feedListAssembler;
 
         private bool IsCurrentUserGroupMember { get; set; }
 
@@ -51,11 +52,11 @@ namespace Uintra.Groups.Web
             IGroupFeedContentService groupFeedContentContentService,
             IGroupFeedLinkProvider groupFeedLinkProvider,
             IGroupMemberService groupMemberService,
-            IFeedFilterStateService<FeedFiltersState> feedFilterStateService,
+            IStateService<FeedFiltersState> feedFilterStateService,
             IPermissionsService permissionsService,
             IContextTypeProvider contextTypeProvider,
             IFeedLinkService feedLinkService,
-            IFeedFilterService feedFilterService)
+            IFeedListBuilder feedListAssembler)
             : base(
                   subscribeService,
                   groupFeedService,
@@ -73,7 +74,7 @@ namespace Uintra.Groups.Web
             _feedFilterStateService = feedFilterStateService;
             _permissionsService = permissionsService;
             _feedLinkService = feedLinkService;
-            _feedFilterService = feedFilterService;
+            _feedListAssembler = feedListAssembler;
         }
 
         #region Actions
@@ -117,26 +118,14 @@ namespace Uintra.Groups.Web
 
         public ActionResult List(GroupFeedListModel model)
         {
-            var centralFeedType = _centralFeedTypeProvider[model.TypeId];
-            var items = GetGroupFeedItems(centralFeedType, model.GroupId).ToList();
+            var filtersState = _feedFilterStateService.Get();
+            var centralFeedType = _centralFeedTypeProvider[filtersState.SelectedActivityTypeId];
+            var items = GetGroupFeedItems(centralFeedType, model.GroupId);
             var tabSettings = _groupFeedService.GetSettings(centralFeedType);
 
-            if (IsEmptyFilters(model.FilterState, _feedFilterStateService.CentralFeedCookieExists()))
-            {
-                model.FilterState = GetFilterStateModel();
-            }
-
-            var filteredItems = _feedFilterService.ApplyFilters(items, model.FilterState, tabSettings).ToList();
-            var currentVersion = _groupFeedService.GetFeedVersion(filteredItems);
-
-            if (model.Version.HasValue && currentVersion == model.Version.Value)
-            {
-                return null;
-            }
+            var filteredItems = _feedListAssembler.BuildForFeed(items, _feedFilterStateService.Get(), tabSettings).ToList();
 
             var centralFeedModel = GetFeedListViewModel(model, filteredItems, centralFeedType);
-            var filterState = MapToFilterState(centralFeedModel.FilterState);
-            _feedFilterStateService.SaveFiltersState(filterState);
 
             return PartialView(ListViewPath, centralFeedModel);
         }
@@ -149,27 +138,31 @@ namespace Uintra.Groups.Web
                 : _groupFeedService.GetFeed(type, groupId);
         }
 
-        protected virtual FeedListViewModel GetFeedListViewModel(GroupFeedListModel model, List<IFeedItem> filteredItems, Enum centralFeedType)
+        protected virtual FeedListViewModel GetFeedListViewModel(GroupFeedListModel model, List<IFeedItem> items, Enum centralFeedType)
         {
-            var take = model.Page * ItemsPerPage;
-            var pagedItemsList = SortForFeed(filteredItems, centralFeedType).Take(take).ToList();
+            var itemsList = items.AsList();
 
-            var settings = _groupFeedService.GetAllSettings().ToList();
+            var settings = _groupFeedService
+                .GetAllSettings()
+                .AsList();
+
             var tabSettings = settings
-                .Single(s => s.Type.ToInt() == model.TypeId)
+                .Single(s => ExactScalar(s.Type, centralFeedType))
                 .Map<FeedTabSettings>();
 
+            var takeCount = model.Page * ItemsPerPage;
+
+            var viewedItems = itemsList.Take(takeCount);
+
             var currentUserId = _intranetUserService.GetCurrentUser().Id;
-            IsCurrentUserGroupMember = _groupMemberService.IsGroupMember(model.GroupId, currentUserId); // I know that state is not the nice idea, but I cant find another way to remove logic duplication
+            IsCurrentUserGroupMember = _groupMemberService.IsGroupMember(model.GroupId, currentUserId);
 
             return new FeedListViewModel
             {
-                Version = _groupFeedService.GetFeedVersion(filteredItems),
-                Feed = GetFeedItems(pagedItemsList, settings),
+                Feed = GetFeedItems(viewedItems, settings),
                 TabSettings = tabSettings,
                 Type = centralFeedType,
-                BlockScrolling = filteredItems.Count < take,
-                FilterState = MapToFilterStateViewModel(model.FilterState)
+                BlockScrolling = itemsList.Count < takeCount
             };
         }
 

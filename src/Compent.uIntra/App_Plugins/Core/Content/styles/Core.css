@@ -719,10 +719,15 @@ img{
 
         @mixin btn-focus-color #5c5672;
     }
+    
+    &--clear{
+        margin:0 0 0 auto;
+    }
 
     &-holder{
         padding:8px 17px;
     }
+
 }
 
 .link{

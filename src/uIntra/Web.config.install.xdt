@@ -119,4 +119,12 @@
       <compiler language="vb;vbs;visualbasic;vbscript" extension=".vb" type="Microsoft.CodeDom.Providers.DotNetCompilerPlatform.VBCodeProvider, Microsoft.CodeDom.Providers.DotNetCompilerPlatform, Culture=neutral, PublicKeyToken=31bf3856ad364e35" warningLevel="4" compilerOptions="/langversion:14 /nowarn:41008 /define:_MYTYPE=\&quot;Web\&quot; /optionInfer+" />
     </compilers>
   </system.codedom>
+
+  <UintraJobs>
+    <settings>
+      <add job="ExtendedUpdateActivityCacheJob" enabled="true" runType="RunEvery" timeType="Minutes" time="1"  xdt:Locator="Condition(@job='UpdateActivityCacheJob')" xdt:Transform="InsertIfMissing"/>
+      <add job="ActivityPublicationJob" enabled="true" runType="RunEvery" timeType="Minutes" time="1"  xdt:Locator="Condition(@job='ActivityPublicationJob')" xdt:Transform="InsertIfMissing"/>
+    </settings>
+  </UintraJobs>
 </configuration>
+

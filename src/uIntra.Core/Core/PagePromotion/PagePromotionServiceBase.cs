@@ -62,11 +62,8 @@ namespace Uintra.Core.PagePromotion
             return cached;
         }
 
-        public virtual bool IsActual(IIntranetActivity activity)
-        {
-            var pagePromotion = activity as T;
-            return pagePromotion != null && !pagePromotion.IsHidden && pagePromotion.PublishDate <= DateTime.Now;
-        }
+        public virtual bool IsActual(IIntranetActivity activity) => 
+            activity is T pagePromotion && !pagePromotion.IsHidden && pagePromotion.PublishDate <= DateTime.Now;
 
         public bool IsPinActual(IIntranetActivity activity) => false;
         public virtual Guid Create(IIntranetActivity activity) => activity.Id;

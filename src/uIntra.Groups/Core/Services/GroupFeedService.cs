@@ -4,6 +4,7 @@ using System.Linq;
 using Compent.Extensions;
 using Uintra.CentralFeed;
 using Uintra.Core.Caching;
+using Uintra.Core.Context;
 using Uintra.Core.Extensions;
 
 namespace Uintra.Groups
@@ -35,9 +36,18 @@ namespace Uintra.Groups
                 .SelectMany(service => service.GetItems())
                 .Where(i => IsGroupActivity(groupId, i));
 
-        public IEnumerable<IFeedItem> GetFeed(Enum type, IEnumerable<Guid> groupIds) =>
-            GetFeed(groupIds)
-                .Where(i => i.Type.ToInt() == type.ToInt());
+        public IEnumerable<IFeedItem> GetFeed(Enum type, IEnumerable<Guid> groupIds)
+        {
+            var services = ContextExtensions.ExactScalar(type, CentralFeedTypeEnum.All)
+                ? _feedItemServices
+                : _feedItemServices.Single(s => s.Type.ToInt() == type.ToInt()).ToEnumerable();
+
+            var result = services
+                .SelectMany(service => service.GetItems())
+                .Where(item => IsGroupActivity(groupIds, item));
+
+            return result;
+        }
 
         public IEnumerable<IFeedItem> GetFeed(IEnumerable<Guid> groupIds) =>
             _feedItemServices

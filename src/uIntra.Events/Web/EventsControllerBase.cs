@@ -76,13 +76,13 @@ namespace Uintra.Events.Web
 
         protected virtual ComingEventsPanelViewModel GetComingEventsViewModel(ComingEventsPanelModel panelModel)
         {
-            (IList<ComingEventViewModel> comingEvents, int totalCount) = GetComingEvents(panelModel.EventsAmount);
+            var (comingEvents, _) = GetComingEvents(panelModel.EventsAmount);
             var viewModel = new ComingEventsPanelViewModel
             {
                 OverviewUrl = _activityPageHelperFactory.GetHelper(IntranetActivityTypeEnum.Events).GetOverviewPageUrl(),
                 Title = panelModel.DisplayTitle,
                 Events = comingEvents,
-                ShowSeeAllButton = comingEvents.Count < totalCount
+                ShowSeeAllButton = true
             };
             return viewModel;
         }

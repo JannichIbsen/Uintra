@@ -5,6 +5,7 @@ using Compent.Extensions;
 using Compent.Uintra.Core.Helpers;
 using Compent.Uintra.Core.Search.Entities;
 using Compent.Uintra.Core.UserTags.Indexers;
+using Compent.Uintra.Hubs;
 using Uintra.Bulletins;
 using Uintra.CentralFeed;
 using Uintra.Comments;
@@ -50,6 +51,7 @@ namespace Compent.Uintra.Core.Bulletins
         private readonly IUserTagService _userTagService;
         private readonly IActivityLinkPreviewService _activityLinkPreviewService;
         private readonly IGroupService _groupService;
+        private readonly IFeedHubService _feedHubService;
 
         public BulletinsService(
             IIntranetActivityRepository intranetActivityRepository,
@@ -71,7 +73,7 @@ namespace Compent.Uintra.Core.Bulletins
             IActivityLocationService activityLocationService,
             IUserTagService userTagService,
             IActivityLinkPreviewService activityLinkPreviewService,
-            IGroupService groupService)
+            IGroupService groupService, IFeedHubService feedHubService)
             : base(intranetActivityRepository, cacheService, activityTypeProvider, intranetMediaService, activityLocationService,activityLinkPreviewService)
         {
             _intranetUserService = intranetUserService;
@@ -89,6 +91,7 @@ namespace Compent.Uintra.Core.Bulletins
             _userTagService = userTagService;
             _activityLinkPreviewService = activityLinkPreviewService;
             _groupService = groupService;
+            _feedHubService = feedHubService;
         }
 
         public override Enum Type => IntranetActivityTypeEnum.Bulletins;
@@ -262,6 +265,29 @@ namespace Compent.Uintra.Core.Bulletins
 
         private bool IsActualPublishDate(Bulletin bulletin) =>
             DateTime.Compare(bulletin.PublishDate, DateTime.Now) <= 0;
+
+
+
+        public override Guid Create(IIntranetActivity activity)
+        {
+            var result = base.Create(activity);
+            _feedHubService.NotifyFeedUpdate();
+            return result;
+
+        }
+
+        public override void Save(IIntranetActivity activity)
+        {
+            base.Save(activity);
+            _feedHubService.NotifyFeedUpdate();
+        }
+
+        public override void Delete(Guid id)
+        {
+            base.Delete(id);
+            _feedHubService.NotifyFeedUpdate();
+        }
+
 
         private SearchableUintraActivity Map(Bulletin bulletin)
         {

@@ -34,12 +34,12 @@ namespace Compent.Uintra.Controllers
             IFeedLinkService feedLinkService,
             IGroupFeedService groupFeedService,
             IFeedActivityHelper feedActivityHelper,
-            IFeedFilterStateService<FeedFiltersState> feedFilterStateService,
+            IStateService<FeedFiltersState> feedFilterStateService,
             IPermissionsService permissionsService,
             UmbracoHelper umbracoHelper,
             IActivityTypeProvider activityTypeProvider,
             IContextTypeProvider contextTypeProvider,
-            IFeedFilterService feedFilterService)
+            IFeedListBuilder feedListAssembler)
             : base(
                   centralFeedService,
                   centralFeedContentService,
@@ -53,7 +53,8 @@ namespace Compent.Uintra.Controllers
                   permissionsService,
                   activityTypeProvider,
                   contextTypeProvider,
-                  feedFilterService)
+                  feedListAssembler
+                )
         {
             _intranetUserService = intranetUserService;
             _groupFeedService = groupFeedService;
@@ -64,13 +65,9 @@ namespace Compent.Uintra.Controllers
         {
             var groupIds = _intranetUserService.GetCurrentUser().GroupIds;
 
-            var groupFeed = IsTypeForAllActivities(type)
-                ? _groupFeedService.GetFeed(groupIds)
-                : _groupFeedService.GetFeed(type, groupIds);
-
-            return base.GetCentralFeedItems(type)
-                .Concat(groupFeed)
-                .OrderByDescending(item => item.PublishDate);
+            return base
+                .GetCentralFeedItems(type)
+                .Concat(_groupFeedService.GetFeed(type, groupIds));
         }
 
         protected override ActivityFeedOptions GetActivityFeedOptions(Guid activityId)

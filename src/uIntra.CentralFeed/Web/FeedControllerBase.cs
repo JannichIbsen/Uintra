@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Web.Mvc;
 using Compent.Extensions;
@@ -25,27 +24,16 @@ namespace Uintra.CentralFeed.Web
         protected virtual int ItemsPerPage => 8;
 
         private readonly IFeedService _feedService;
-        private readonly IFeedFilterStateService<FeedFiltersState> _feedFilterStateService;
 
         protected FeedControllerBase(
             ISubscribeService subscribeService,
             IFeedService feedService,
             IIntranetUserService<IIntranetUser> intranetUserService,
-            IFeedFilterStateService<FeedFiltersState> feedFilterStateService,
+            IStateService<FeedFiltersState> feedFilterStateService,
             IFeedTypeProvider centralFeedTypeProvider,
             IContextTypeProvider contextTypeProvider): base(contextTypeProvider)
         {
             _feedService = feedService;
-            _feedFilterStateService = feedFilterStateService;
-        }
-
-        [HttpGet]
-        public virtual ActionResult OpenFilters()
-        {
-            var feedState = _feedFilterStateService.GetFiltersState();
-            feedState.IsFiltersOpened = !feedState.IsFiltersOpened;
-            _feedFilterStateService.SaveFiltersState(feedState);
-            return new EmptyResult();
         }
         
         public virtual JsonResult AvailableActivityTypes()
@@ -60,11 +48,8 @@ namespace Uintra.CentralFeed.Web
             return Json(activityTypes, JsonRequestBehavior.AllowGet);
         }
 
-        public virtual JsonResult CacheVersion()
-        {
-            var version = _feedService.GetFeedVersion(Enumerable.Empty<IFeedItem>());
-            return Json(new { Result = version }, JsonRequestBehavior.AllowGet);
-        }        
+        public virtual JsonResult CacheVersion() => 
+            Json(new { Result = long.MaxValue }, JsonRequestBehavior.AllowGet);
 
 
         protected virtual IEnumerable<FeedItemViewModel> GetFeedItems(IEnumerable<IFeedItem> items, IEnumerable<FeedSettings> settings)
@@ -80,8 +65,8 @@ namespace Uintra.CentralFeed.Web
 
         protected virtual FeedItemViewModel MapFeedItemToViewModel(IFeedItem i, Dictionary<int, FeedSettings> settings)
         {
-            ActivityFeedOptions options = GetActivityFeedOptions(i.Id);
-            return new FeedItemViewModel()
+            var options = GetActivityFeedOptions(i.Id);
+            return new FeedItemViewModel
             {
                 Activity = i,
                 Options = options,
@@ -91,88 +76,10 @@ namespace Uintra.CentralFeed.Web
 
         protected abstract ActivityFeedOptions GetActivityFeedOptions(Guid activityId);
 
-        protected virtual IEnumerable<Enum> GetInvolvedTypes(IEnumerable<IFeedItem> items)
-        {
-            return items
-                .Select(i => i.Type)
-                .Distinct();
-        }
-        
-        protected virtual IList<IFeedItem> SortForFeed(IEnumerable<IFeedItem> items, Enum type)
-        {
-            var sortedItems = Sort(items, type);
-            return SortByPin(sortedItems).ToList();
-        }
-
-        protected virtual IEnumerable<IFeedItem> Sort(IEnumerable<IFeedItem> sortedItems, Enum type)
-        {
-            IEnumerable<IFeedItem> result;
-            switch (type)
-            {
-                case CentralFeedTypeEnum.All:
-                    result = sortedItems.OrderBy(i => i, new CentralFeedItemComparer());
-                    break;
-                default:
-                    result = sortedItems.OrderByDescending(el => el.PublishDate);
-                    break;
-            }
-            return result;
-        }
-
-        protected virtual IEnumerable<IFeedItem> SortByPin(IEnumerable<IFeedItem> items) =>
-            items.OrderByDescending(el => el.IsPinActual);
-
-        [Pure]
-        protected virtual bool IsEmptyFilters(FeedFilterStateModel filterState, bool isCookiesExist)
-        {
-            return !isCookiesExist || filterState == null || !IsAnyFilterSet(filterState);
-        }
-
-        private bool IsAnyFilterSet(FeedFilterStateModel filterState)
-        {
-            return filterState.ShowPinned.HasValue
-                || filterState.IncludeBulletin.HasValue
-                || filterState.ShowSubscribed.HasValue;
-        }
-
-        protected virtual FeedFilterStateModel GetFilterStateModel()
-        {
-            var stateModel = _feedFilterStateService.GetFiltersState();
-
-            var result = new FeedFilterStateModel()
-            {
-                ShowPinned = stateModel.PinnedFilterSelected,
-                IncludeBulletin = stateModel.BulletinFilterSelected,
-                ShowSubscribed = stateModel.SubscriberFilterSelected
-            };
-
-            return result;
-        }
-
         protected static IEnumerable<ActivityFeedTabViewModel> GetTabsWithCreateUrl(IEnumerable<ActivityFeedTabViewModel> tabs) =>
             tabs.Where(t => !IsTypeForAllActivities(t.Type) && t.Links.Create.HasValue());
 
         protected static bool IsTypeForAllActivities(Enum type) =>
-            type is CentralFeedTypeEnum.All;
-
-        protected virtual FeedFilterStateViewModel MapToFilterStateViewModel(FeedFilterStateModel model)
-        {
-            return new FeedFilterStateViewModel()
-            {
-                ShowPinned = model.ShowPinned ?? false,
-                IncludeBulletin = model.IncludeBulletin ?? false,
-                ShowSubscribed = model.ShowSubscribed ?? false
-            };
-        }
-
-        protected virtual FeedFiltersState MapToFilterState(FeedFilterStateViewModel model)
-        {
-            return new FeedFiltersState
-            {
-                PinnedFilterSelected = model.ShowPinned,
-                BulletinFilterSelected = model.IncludeBulletin,
-                SubscriberFilterSelected = model.ShowSubscribed
-            };
-        }        
+            type is CentralFeedTypeEnum.All;   
     }
 }

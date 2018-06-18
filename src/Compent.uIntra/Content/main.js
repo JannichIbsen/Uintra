@@ -1,5 +1,9 @@
-﻿import initCore from './../App_Plugins/Core/Content/Scripts/Core';
+﻿
+import 'expose-loader?jQuery!jquery';
+import 'signalr';
+import initCore from './../App_Plugins/Core/Content/Scripts/Core';
 import browserCompatibility from './../App_Plugins/Core/BrowserCompatibility/BrowserCompatibility';
+import feedStateService from './../App_Plugins/CentralFeed/feedStateService'
 import centralFeed from './../App_Plugins/CentralFeed/centralFeed';
 import initSearch from './../App_Plugins/Search/search';
 import initActionLinkWithConfirm from "../App_Plugins/Core/Content/scripts/ActionLinkWithConfirm";
@@ -23,8 +27,8 @@ import initFaqPanel from "./../App_Plugins/Panels/FaqPanel/faqPanel";
 import activitySubscribeSettings from "./../App_Plugins/Subscribe/activitySubscribeSettings";
 import tablePanel from "./../App_Plugins/Panels/TablePanel/Js/tablePanel";
 
-
 initCore();
+feedStateService.init();
 centralFeed.init();
 initSearch();
 initActionLinkWithConfirm();

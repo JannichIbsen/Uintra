@@ -5,6 +5,7 @@ using Compent.Extensions;
 using Compent.Uintra.Core.Helpers;
 using Compent.Uintra.Core.Search.Entities;
 using Compent.Uintra.Core.UserTags.Indexers;
+using Compent.Uintra.Hubs;
 using Uintra.CentralFeed;
 using Uintra.Comments;
 using Uintra.Core.Activity;
@@ -53,6 +54,7 @@ namespace Compent.Uintra.Core.Events
         private readonly IActivitySubscribeSettingService _activitySubscribeSettingService;
         private readonly IFeedTypeProvider _feedTypeProvider;
         private readonly IGroupService _groupService;
+        private readonly IFeedHubService _feedHubService;
 
         public EventsService(
             IIntranetActivityRepository intranetActivityRepository,
@@ -76,6 +78,7 @@ namespace Compent.Uintra.Core.Events
             IActivitySubscribeSettingService activitySubscribeSettingService,
             IFeedTypeProvider feedTypeProvider,
             IActivityLinkPreviewService activityLinkPreviewService,
+            IFeedHubService feedHubService,
             IGroupService groupService)
             : base(intranetActivityRepository, cacheService, activityTypeProvider, intranetMediaService, activityLocationService, activityLinkPreviewService)
         {
@@ -95,6 +98,7 @@ namespace Compent.Uintra.Core.Events
             _activitySubscribeSettingService = activitySubscribeSettingService;
             _feedTypeProvider = feedTypeProvider;
             _groupService = groupService;
+            _feedHubService = feedHubService;
         }
 
         public override Enum Type => IntranetActivityTypeEnum.Events;
@@ -107,7 +111,7 @@ namespace Compent.Uintra.Core.Events
         public IEnumerable<Event> GetComingEvents(DateTime fromDate)
         {
             var events = GetAll()
-                .Where(e => e.StartDate > fromDate && IsActualPublishDate(e))
+                .Where(e => e.StartDate > fromDate && IsActualPublishDate(e)) 
                 .OrderBy(e => e.StartDate);
             return events;
         }
@@ -158,23 +162,32 @@ namespace Compent.Uintra.Core.Events
 
         public override Guid Create(IIntranetActivity activity)
         {
-            return base.Create(activity, activityId =>
+            var result = base.Create(activity, activityId =>
                 {
                     var subscribeSettings = Map(activity);
                     subscribeSettings.ActivityId = activityId;
                     _activitySubscribeSettingService.Create(subscribeSettings);
+                    
                 });
+            _feedHubService.NotifyFeedUpdate();
+            return result;
+            
         }
 
         public override void Save(IIntranetActivity activity)
         {
-            base.Save(activity, savedActivity => _activitySubscribeSettingService.Save(Map(savedActivity)));
+            base.Save(activity, savedActivity =>
+            {
+                _activitySubscribeSettingService.Save(Map(savedActivity));               
+            });
+            _feedHubService.NotifyFeedUpdate();
         }
 
         public override void Delete(Guid id)
         {
             _activitySubscribeSettingService.Delete(id);
             base.Delete(id);
+            _feedHubService.NotifyFeedUpdate();
         }
 
         private IOrderedEnumerable<Event> GetOrderedActualItems() =>

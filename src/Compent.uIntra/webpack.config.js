@@ -13,6 +13,9 @@ module.exports = (env) => {
             head_css: './Content/head_css.js',
             app: './Content/main.js'
         },
+        resolve: {
+            extensions: ['.js', '.vue', '.json']
+        },
         output: {
             path: path.join(__dirname, 'build'),
             filename: '[name].js',
@@ -26,6 +29,13 @@ module.exports = (env) => {
                     loader: 'babel-loader',
                     query: {
                         presets: ["env"]
+                    }
+                },
+                {
+                    test: /\.vue$/,
+                    loader: 'vue-loader',
+                    options: {
+                        extractCSS: true
                     }
                 },
                 {

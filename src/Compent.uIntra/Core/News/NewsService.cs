@@ -5,6 +5,7 @@ using Compent.Extensions;
 using Compent.Uintra.Core.Helpers;
 using Compent.Uintra.Core.Search.Entities;
 using Compent.Uintra.Core.UserTags.Indexers;
+using Compent.Uintra.Hubs;
 using Uintra.CentralFeed;
 using Uintra.Comments;
 using Uintra.Core;
@@ -52,6 +53,7 @@ namespace Compent.Uintra.Core.News
         private readonly IUserTagService _userTagService;
         private readonly IActivityLocationService _activityLocationService;
         private readonly IGroupService _groupService;
+        private readonly IFeedHubService _feedHubService;
 
         public NewsService(IIntranetActivityRepository intranetActivityRepository,
             ICacheService cacheService,
@@ -72,7 +74,9 @@ namespace Compent.Uintra.Core.News
             INotifierDataHelper notifierDataHelper,
             IActivityLocationService activityLocationService,
             IUserTagService userTagService,
-            IActivityLinkPreviewService activityLinkPreviewService, IGroupService groupService)
+            IActivityLinkPreviewService activityLinkPreviewService,
+            IGroupService groupService,
+            IFeedHubService feedHubService)
             : base(intranetActivityRepository, cacheService, intranetUserService, activityTypeProvider, intranetMediaService, activityLocationService, activityLinkPreviewService)
         {
             _intranetUserService = intranetUserService;
@@ -90,6 +94,7 @@ namespace Compent.Uintra.Core.News
             _notifierDataHelper = notifierDataHelper;
             _userTagService = userTagService;
             _groupService = groupService;
+            _feedHubService = feedHubService;
             _activityLocationService = activityLocationService;
         }
 
@@ -197,6 +202,25 @@ namespace Compent.Uintra.Core.News
             var searchableActivities = activities.Select(Map);
             _activityIndex.DeleteByType(UintraSearchableTypeEnum.News);
             _activityIndex.Index(searchableActivities);
+        }
+
+        public override void Save(IIntranetActivity activity)
+        {
+            base.Save(activity);
+            _feedHubService.NotifyFeedUpdate();
+        }
+
+        public override Guid Create(IIntranetActivity activity)
+        {
+            var result = base.Create(activity);
+            _feedHubService.NotifyFeedUpdate();
+            return result;
+        }
+
+        public override void Delete(Guid id)
+        {
+            base.Delete(id);
+            _feedHubService.NotifyFeedUpdate();
         }
 
         private NotifierData GetNotifierData(Guid entityId, Enum notificationType)

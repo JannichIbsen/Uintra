@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Compent.Extensions;
 using Uintra.CentralFeed;
 using Uintra.Core.Caching;
+using Uintra.Core.Context;
 using Uintra.Core.Extensions;
 using Uintra.Groups;
 
@@ -22,17 +24,18 @@ namespace Compent.Uintra.Core.CentralFeed
 
         public IEnumerable<IFeedItem> GetFeed(Enum type)
         {
-            var service = _feedItemServices.Single(s => s.Type.ToInt() == type.ToInt());
-            return service.GetItems().Where(IsCentralFeedActivity);
+            var services = ContextExtensions.ExactScalar(type, CentralFeedTypeEnum.All)
+                ? _feedItemServices
+                : _feedItemServices.Single(s => s.Type.ToInt() == type.ToInt()).ToEnumerable();
+
+            var result = services
+                .SelectMany(service => service.GetItems())
+                .Where(IsCentralFeedActivity);
+
+            return result;
         }
 
-        public IEnumerable<IFeedItem> GetFeed()
-        {
-            var items = _feedItemServices.SelectMany(service => service.GetItems());
-            return items.Where(IsCentralFeedActivity);
-        }
-
-        private bool IsCentralFeedActivity(IFeedItem item) =>
+        private static bool IsCentralFeedActivity(IFeedItem item) =>
             (item as IGroupActivity)?.GroupId == null;
     }
 }

@@ -29,6 +29,13 @@
     </settings>
   </UintraJobs>
 
+
+  <UintraJobs>
+    <settings>
+      <add job="UpdateActivityCacheJob" xdt:Locator="Match(job)" xdt:Transform="Remove"/>
+    </settings>
+  </UintraJobs>
+
   <browserCompatibilityConfiguration xdt:Transform="InsertIfMissing">
     <browsers>
       <browser name="InternetExplorer" version="11.0"></browser>
