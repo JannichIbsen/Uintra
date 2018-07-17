@@ -14,7 +14,7 @@ using Uintra.Core.TypeProviders;
 using Uintra.Core.User;
 using Uintra.Core.User.Permissions;
 using Uintra.Subscribe;
-using static Uintra.Core.Context.ContextExtensions;
+using static Uintra.Core.Context.Extensions.ContextExtensions;
 
 namespace Uintra.CentralFeed.Web
 {

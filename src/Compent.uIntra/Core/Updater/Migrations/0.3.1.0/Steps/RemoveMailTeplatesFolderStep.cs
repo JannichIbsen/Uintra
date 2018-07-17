@@ -1,10 +1,6 @@
 ﻿using System.Linq;
-using System.Web.Mvc;
-using uIntra.Notification;
 using Uintra.Core;
 using Uintra.Notification;
-using Uintra.Notification.Configuration;
-using Umbraco.Core.Models;
 using Umbraco.Core.Services;
 using Umbraco.Web;
 

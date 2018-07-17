@@ -6,6 +6,7 @@ using Uintra.CentralFeed;
 using Uintra.Core.Caching;
 using Uintra.Core.Context;
 using Uintra.Core.Extensions;
+using static Uintra.Core.Context.Extensions.ContextExtensions;
 
 namespace Uintra.Groups
 {
@@ -38,7 +39,7 @@ namespace Uintra.Groups
 
         public IEnumerable<IFeedItem> GetFeed(Enum type, IEnumerable<Guid> groupIds)
         {
-            var services = ContextExtensions.ExactScalar(type, CentralFeedTypeEnum.All)
+            var services = ExactScalar(type, CentralFeedTypeEnum.All)
                 ? _feedItemServices
                 : _feedItemServices.Single(s => s.Type.ToInt() == type.ToInt()).ToEnumerable();
 

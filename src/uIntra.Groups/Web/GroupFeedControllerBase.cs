@@ -15,7 +15,7 @@ using Uintra.Core.User;
 using Uintra.Core.User.Permissions;
 using Uintra.Groups.Attributes;
 using Uintra.Subscribe;
-using static Uintra.Core.Context.ContextExtensions;
+using static Uintra.Core.Context.Extensions.ContextExtensions;
 
 namespace Uintra.Groups.Web
 {

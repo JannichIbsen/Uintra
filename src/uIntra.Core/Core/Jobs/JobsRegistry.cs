@@ -25,8 +25,11 @@ namespace Uintra.Core.Jobs
         {
             Assembly[] assemblies = AppDomain.CurrentDomain.GetAssemblies();
 
-            var types = assemblies.Select(assembly => assembly.GetTypes().Where(s => typeof(BaseIntranetJob).IsAssignableFrom(s) && s != typeof(BaseIntranetJob)))
-                .SelectMany(t => t);
+            var types = assemblies
+                .SelectMany(assembly => assembly.GetTypes().Where(s =>
+                    typeof(BaseIntranetJob).IsAssignableFrom(s) &&
+                    s != typeof(BaseIntranetJob) &&
+                    !s.IsAbstract));
 
             foreach (var type in types)
             {

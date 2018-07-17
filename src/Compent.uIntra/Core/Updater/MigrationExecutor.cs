@@ -5,6 +5,7 @@ using System.Web;
 using System.Web.Mvc;
 using Compent.Extensions;
 using EmailWorker.Data.Extensions;
+using Examine;
 using Uintra.Core.Exceptions;
 using Uintra.Core.Extensions;
 using Uintra.Core.MigrationHistories;
@@ -39,7 +40,7 @@ namespace Compent.Uintra.Core.Updater
 
             if (executionResult.Type is ExecutionResultType.Success)
             {
-                 executionHistory
+                executionHistory
                     .Pipe(ToMigrationHistory)
                     .Do(_migrationHistoryService.Create);
 
@@ -50,6 +51,7 @@ namespace Compent.Uintra.Core.Updater
             }
             else
             {
+                _exceptionLogger.Log(executionResult.Exception);
                 var (undoHistory, undoResult) = TryUndoSteps(executionHistory);
                 if (undoResult.Type is ExecutionResultType.Failure)
                 {
@@ -60,6 +62,7 @@ namespace Compent.Uintra.Core.Updater
                 }
             }
 
+            RebuildExamineIndex();
             ApplicationContext.Current.Services.MediaService.RebuildXmlStructures();
             ApplicationContext.Current.Services.MemberService.RebuildXmlStructures();
         }
@@ -104,7 +107,7 @@ namespace Compent.Uintra.Core.Updater
                 !allHistory.Any(historyItem => IsMigrationItemEqualsToHistory(migrationItem, historyItem)));
 
 
-        public static bool IsMigrationItemEqualsToHistory(MigrationItem item, MigrationHistory history)=>
+        public static bool IsMigrationItemEqualsToHistory(MigrationItem item, MigrationHistory history) =>
             history.Name == StepIdentity(item.Step) && new Version(history.Version) == item.Version;
 
         public static (Stack<MigrationItem> executionHistory, ExecutionResult result) TryExecuteSteps(IEnumerable<MigrationItem> steps)
@@ -167,7 +170,13 @@ namespace Compent.Uintra.Core.Updater
             return Success;
         }
 
+
         public static string StepIdentity(IMigrationStep step) => step.GetType().Name;
+
+        private static void RebuildExamineIndex()
+        {
+            ExamineManager.Instance.IndexProviderCollection[Umbraco.Core.Constants.Examine.InternalIndexer].RebuildIndex();
+        }
     }
 
 
