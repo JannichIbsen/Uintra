@@ -12,16 +12,17 @@ let feedStateUpdateEventId = "feedStateUpdate";
 function init() {
     const connection = $.hubConnection();
     feedStateHubProxy = connection.createHubProxy("feedStateHub");
-    connection.start().done(()=>initEvents(feedStateHubProxy));
+    connection.start();
+    initEvents(feedStateHubProxy);
 }
 
 function initEvents(hub) {
-    hub.on("filtersStateUpdate", function (newState) {
+    hub.on(feedStateUpdateEventId, function (newState) {
         state = newState;
         dispatchEvent(feedStateUpdateEventId, { state: state});
     });
 
-    hub.on("feedUpdate", function () {
+    hub.on(feedUpdateEventId, function () {
         debugger;
         dispatchEvent(feedUpdateEventId);
     });
