@@ -10,11 +10,9 @@ let feedUpdateEventId = "feedUpdate";
 let feedStateUpdateEventId = "feedStateUpdate";
 
 function init() {
-    debugger;
     const connection = $.hubConnection();
     feedStateHubProxy = connection.createHubProxy("feedStateHub");
-    connection.start();
-    initEvents(feedStateHubProxy);
+    connection.start().done(()=>initEvents(feedStateHubProxy));
 }
 
 function initEvents(hub) {
@@ -24,6 +22,7 @@ function initEvents(hub) {
     });
 
     hub.on("feedUpdate", function () {
+        debugger;
         dispatchEvent(feedUpdateEventId);
     });
 

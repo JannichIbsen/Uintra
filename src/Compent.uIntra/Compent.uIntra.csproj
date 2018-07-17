@@ -1467,6 +1467,7 @@
     <Compile Include="Persistence\Sql\DbContextFactory.cs" />
     <Compile Include="Persistence\Sql\DbObjectContext.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Startup.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Views\web.config" />
